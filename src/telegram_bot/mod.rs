@@ -29,8 +29,6 @@ pub async fn create(configuration: &Configuration) {
 
         if let MessageKind::Common(common_msg) = &msg.kind {
             if let Some(replied_message) = &common_msg.reply_to_message {
-                log::info!("{:?}", replied_message);
-
                 let mut normalized_msg = String::new();
 
                 if let Some(replied_message_text) = replied_message.text() {
