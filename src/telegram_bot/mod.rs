@@ -1,7 +1,7 @@
 use crate::configuration::telegram::TelegramConfiguration;
 use crate::model::types::ModelAPI;
 use log;
-use std::rc::Rc;
+use std::sync::Arc;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode};
 use teloxide::utils::html::escape;
@@ -9,7 +9,15 @@ use teloxide::utils::html::escape;
 #[derive(Debug, Clone)]
 struct OriginalMessage(Message);
 
-pub async fn create(telegram_configuration: &TelegramConfiguration, _model: Rc<dyn ModelAPI>) {
+#[derive(Debug, Clone)]
+struct Parameters {
+    model_api: Arc<dyn ModelAPI>,
+}
+
+pub async fn create(
+    telegram_configuration: &TelegramConfiguration,
+    model: Arc<dyn ModelAPI>,
+) {
     let bot = Bot::new(telegram_configuration.token.clone());
 
     log::info!("Starting telegram bot...");
@@ -45,8 +53,9 @@ pub async fn create(telegram_configuration: &TelegramConfiguration, _model: Rc<d
                 }
             }))
             .endpoint(
-                |bot: Bot, raw_content: String, original_message: OriginalMessage| async move {
-                    let content = escape(raw_content.as_str());
+                |bot: Bot, raw_content: String, original_message: OriginalMessage, params: Parameters| async move {
+                    let result = params.model_api.get_alternative(String::from(""), raw_content).await.unwrap();
+                    let content = escape(result.as_str());
 
                     bot.send_message(original_message.0.chat.id, content)
                         .reply_to_message_id(original_message.0.id)
@@ -58,6 +67,7 @@ pub async fn create(telegram_configuration: &TelegramConfiguration, _model: Rc<d
             ),
         ),
     )
+    .dependencies(dptree::deps![Parameters { model_api: model }])
     .default_handler(|_| async move {})
     .enable_ctrlc_handler()
     .build()

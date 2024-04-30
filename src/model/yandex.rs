@@ -1,5 +1,6 @@
 use super::types::ModelAPI;
 
+#[derive(Debug)]
 pub struct YandexModel {
     pub api_token: String,
     pub catalog_id: String,
@@ -14,12 +15,13 @@ impl YandexModel {
     }
 }
 
+#[async_trait::async_trait]
 impl ModelAPI for YandexModel {
-    fn get_alternative(
+    async fn get_alternative(
         &self,
-        _system_msg: String,
-        _user_msg: String,
+        system_msg: String,
+        user_msg: String,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        Ok(String::from("Hello, world!!!"))
+        Ok(format!("system_msg: {system_msg}, user_msg: {user_msg}"))
     }
 }
