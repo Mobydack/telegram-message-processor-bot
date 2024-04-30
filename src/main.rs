@@ -1,6 +1,8 @@
 mod configuration;
+mod model;
 mod telegram_bot;
 
+use crate::model::ModelAPIFactory;
 use std::{env, panic};
 use tokio::signal;
 
@@ -26,9 +28,10 @@ async fn main() {
         log::error!("{panic_info}");
     }));
 
-    let configuration = configuration::Configuration::new();
+    let app_config = configuration::Configuration::new();
+    let model = ModelAPIFactory::create(&app_config.model);
 
-    telegram_bot::create(&configuration).await;
+    telegram_bot::create(&app_config.telegram, model).await;
 
     tokio::select! {
         _ = signal::ctrl_c() => { graceful_shutdown_handler().await }

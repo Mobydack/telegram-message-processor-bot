@@ -1,13 +1,13 @@
 use super::util;
 
-#[derive(Debug)]
-pub struct Telegram {
+#[derive(Debug, Clone)]
+pub struct TelegramConfiguration {
     pub token: String,
 }
 
-impl Telegram {
+impl TelegramConfiguration {
     pub fn new() -> Self {
-        Telegram {
+        TelegramConfiguration {
             token: util::get_env_with_scope!("TELEGRAM", "TOKEN"),
         }
     }

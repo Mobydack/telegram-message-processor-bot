@@ -4,19 +4,20 @@ mod util;
 pub mod yandex_api;
 
 use model::ModelConfiguration;
-use telegram::Telegram;
+use std::sync::Arc;
+use telegram::TelegramConfiguration;
 
 #[derive(Debug)]
 pub struct Configuration {
-    pub telegram: Telegram,
-    pub model: ModelConfiguration,
+    pub telegram: Arc<TelegramConfiguration>,
+    pub model: Arc<ModelConfiguration>,
 }
 
 impl Configuration {
     pub fn new() -> Self {
         Configuration {
-            telegram: Telegram::new(),
-            model: ModelConfiguration::parse(),
+            telegram: Arc::new(TelegramConfiguration::new()),
+            model: Arc::new(ModelConfiguration::parse()),
         }
     }
 }
