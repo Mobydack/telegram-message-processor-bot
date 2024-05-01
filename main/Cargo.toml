@@ -1,0 +1,16 @@
+[package]
+name = "msg_decoder"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.80"
+log = "0.4.21"
+pretty_env_logger = "0.5.0"
+reqwest = { version = "0.12.4", features = ["json"] }
+teloxide = { version = "0.12.2", features = ["macros"] }
+tokio = { version = "1.37.0", features = ["full"] }
+serde = { version = "1.0.198", features = ["derive"] }
+yandex_cloud_grpc_client = { path = "../yandex_cloud_grpc_client" }

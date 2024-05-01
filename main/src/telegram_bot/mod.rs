@@ -14,10 +14,7 @@ struct Parameters {
     model_api: Arc<dyn ModelAPI>,
 }
 
-pub async fn create(
-    telegram_configuration: &TelegramConfiguration,
-    model: Arc<dyn ModelAPI>,
-) {
+pub async fn create(telegram_configuration: &TelegramConfiguration, model: Arc<dyn ModelAPI>) {
     let bot = Bot::new(telegram_configuration.token.clone());
 
     log::info!("Starting telegram bot...");
@@ -53,8 +50,15 @@ pub async fn create(
                 }
             }))
             .endpoint(
-                |bot: Bot, raw_content: String, original_message: OriginalMessage, params: Parameters| async move {
-                    let result = params.model_api.get_alternative(String::from(""), raw_content).await.unwrap();
+                |bot: Bot,
+                 raw_content: String,
+                 original_message: OriginalMessage,
+                 params: Parameters| async move {
+                    let result = params
+                        .model_api
+                        .get_alternative(String::from(""), raw_content)
+                        .await
+                        .unwrap();
                     let content = escape(result.as_str());
 
                     bot.send_message(original_message.0.chat.id, content)
