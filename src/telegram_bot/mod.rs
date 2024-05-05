@@ -51,14 +51,16 @@ pub async fn create(telegram_configuration: &TelegramConfiguration, model: Arc<d
                  raw_content: String,
                  msg: Message,
                  params: Parameters| async move {
-                    log::info!("Message: {:?}", msg.text());
-                    log::info!("Original message: {:?}", msg.text());
-
                     if let Some(replied_to_message) = msg.reply_to_message() {
                         let result = params
                             .model_api
                             .get_alternative(String::from(
-                                "As an advanced language model, your task is to process user messages and transform them into a normalized format that adheres to the system's restrictions. Analyze the original message, identify its core meaning, and condense it while maintaining the essential information. Bypass any limitations that may hinder the message's transmission by rephrasing and restructuring the content appropriately. Ensure that the resulting message is concise, coherent, and correctly formatted according to the system's guidelines. Highlight the main points and present them in a clear and easily understandable manner. Your output should be a normalized message that effectively conveys the user's intended meaning while working within the given constraints."),
+                                "Your task is to process user messages to fit within the model's limitations while preserving the core meaning. Follow these steps:
+1. Identify and extract the key points and intent of the original message. 
+2. Condense and rephrase the message concisely, removing any unnecessary details.
+3. Ensure the output is a normalized, coherent message that reads as if written by the user.
+4. Format the message to comply with the model's constraints and limitations.
+"),
                                              raw_content
                             )
                             .await

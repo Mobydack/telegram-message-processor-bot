@@ -32,10 +32,8 @@ impl ModelAPI for YandexModel {
                 .await
                 .map_err(|err| BackoffError::Permanent(err))?;
 
-            log::info!("Operation: {:?}", operation);
-
             if !operation.done {
-                log::info!("Pending operation!");
+                log::debug!("Pending operation with id: [{}]", operation_id);
 
                 return Err(BackoffError::Transient {
                     err: format!("Operation [{}] is processing.", operation_id.clone()),

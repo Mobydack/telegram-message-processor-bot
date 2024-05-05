@@ -1,0 +1,8 @@
+services:
+  msg_decoder_bot:
+    container_name: "msg_decoder_bot"
+    env_file:
+      - .env
+    build:
+      context: .
+      target: production
