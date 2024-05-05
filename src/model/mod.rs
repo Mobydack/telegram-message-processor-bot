@@ -1,6 +1,5 @@
 pub mod types;
 mod yandex;
-mod util;
 
 use crate::configuration::model::ModelConfiguration;
 use std::sync::Arc;

@@ -1,3 +1,0 @@
-[submodule "yandex-cloud/cloudapi"]
-	path = yandex_cloud_grpc_client/protos
-	url = https://github.com/yandex-cloud/cloudapi.git

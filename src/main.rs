@@ -1,6 +1,7 @@
 mod configuration;
 mod model;
 mod telegram_bot;
+mod api;
 
 use crate::model::ModelAPIFactory;
 use std::{env, panic};
