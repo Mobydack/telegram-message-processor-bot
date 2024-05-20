@@ -1,0 +1,136 @@
+name: Public docker release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.init.outputs.release-version }}
+      matrix: ${{ steps.init.outputs.matrix }}
+      targets: ${{ steps.init.outputs.targets }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - id: init
+        run: |
+          MATRIX=$(jq -Mc . .github/workflows/release_matrix.json)
+          TARGETS=$(jq -Mc '.include | map(.target)' <<<${MATRIX})
+
+          echo "release-version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
+          echo "targets=${TARGETS}" >> "$GITHUB_OUTPUT"
+  build-release:
+    name: build-release
+    runs-on: ${{ matrix.os }}
+    needs: init
+    env:
+      STAGING: remindee-bot-${{ needs.init.outputs.release-version }}-${{ matrix.target }}
+      BINARY_PATH: target/${{ matrix.target }}/release/msg_decoder_bot
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup cross
+        run: |
+          cargo install cross
+      - name: Build release binary
+        run: cross build --verbose --release --target ${{ matrix.target }}
+      - name: Strip release binary
+        if: ${{ ! matrix.is_arm }}
+        run: strip ${{ env.BINARY_PATH }}
+      - name: ARMv7 - Strip release binary
+        if: ${{ matrix.is_arm }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-arm-linux-gnueabihf
+          arm-linux-gnueabihf-strip ${{ env.BINARY_PATH }}
+      - name: macOS - Import Apple certificate
+        if: ${{ matrix.is_macos }}
+        uses: apple-actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
+          p12-password: ${{ secrets.APPLE_CERT_PASSWORD }}
+      - name: macOS - Sign the binary
+        if: ${{ matrix.is_macos }}
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: codesign -s "$APPLE_TEAM_ID" --timestamp --options runtime ${{ env.BINARY_PATH }}
+      - name: Build tar.gz archive
+        if: ${{ ! matrix.zip_archive }}
+        shell: bash
+        run: |
+          mkdir ${{ env.STAGING }}
+
+          mv ${{ env.BINARY_PATH }} ${{ env.STAGING }}/
+          tar czf ${{ env.STAGING }}.tar.gz ${{ env.STAGING }}/
+      - name: Build zip archive
+        if: ${{ matrix.zip_archive }}
+        shell: bash
+        run: |
+          mkdir ${{ env.STAGING }}
+
+          mv ${{ env.BINARY_PATH }} ${{ env.STAGING }}/
+          zip -r ${{ env.STAGING }}.zip ${{ env.STAGING }}/
+      - name: Store notarize credentials
+        if: ${{ matrix.is_macos }}
+        env:
+          AC_USERNAME: ${{ secrets.AC_USERNAME }}
+          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: xcrun notarytool store-credentials "notarytool-profile" --apple-id "$AC_USERNAME" --team-id "$APPLE_TEAM_ID" --password "$AC_PASSWORD"
+      - name: Notarize the workflow
+        if: ${{ matrix.is_macos }}
+        run: xcrun notarytool submit ${{ env.STAGING }}.zip --keychain-profile "notarytool-profile" --wait
+      - name: Upload tar.gz archive
+        if: ${{ ! matrix.zip_archive }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.STAGING }}
+          path: ${{ env.STAGING }}.tar.gz
+      - name: Upload zip archive
+        if: ${{ matrix.zip_archive }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.STAGING }}
+          path: ${{ env.STAGING }}.zip
+  create-release:
+    name: create-release
+    needs: [ init, build-release ]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - targets: ${{ fromJSON(needs.init.outputs.targets) }}
+    env:
+      PREFIX: msg_decoder_bot_${{ needs.init.outputs.release-version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFIX }}-${{ matrix.targets[0] }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFIX }}-${{ matrix.targets[1] }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFIX }}-${{ matrix.targets[2] }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFIX }}-${{ matrix.targets[3] }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFIX }}-${{ matrix.targets[4] }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.PREFIX }}-${{ matrix.targets[0] }}.tar.gz
+            ${{ env.PREFIX }}-${{ matrix.targets[1] }}.tar.gz
+            ${{ env.PREFIX }}-${{ matrix.targets[2] }}.zip
+            ${{ env.PREFIX }}-${{ matrix.targets[3] }}.zip
+            ${{ env.PREFIX }}-${{ matrix.targets[4] }}.zip

@@ -11,17 +11,12 @@ WORKDIR /app
 
 
 RUN apk upgrade --update-cache --available && \
-    apk add clang lld musl-dev git pkgconfig build-base openssl openssl-libs-static
+    apk add clang lld musl-dev git pkgconfig build-base openssl openssl-libs-static openssl-dev
 
-RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-    --mount=type=cache,target=/app/target/ \
-    --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/ \
-cargo update && \
-cargo build --locked --release && \
-cp ./target/release/$APP_NAME /bin/server
+COPY . /app
+
+RUN cargo build --locked --release && \
+    cp ./target/release/$APP_NAME /bin/server
 
 ################################################################################
 
