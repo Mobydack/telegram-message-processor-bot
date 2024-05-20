@@ -9,7 +9,7 @@ jobs:
   push_images:
     runs-on: ubuntu-latest
     permissions:
-      packages: true
+      packages: repo
       contents: read
     strategy:
       fail-fast: false
