@@ -15,7 +15,7 @@ RUN apk upgrade --update-cache --available && \
 
 COPY . /app
 
-RUN cargo build --locked --release && \
+RUN cargo build --release && \
     cp ./target/release/$APP_NAME /bin/server
 
 ################################################################################
