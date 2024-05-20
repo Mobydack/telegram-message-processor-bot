@@ -4,7 +4,7 @@
     {
       "build": "linux",
       "os": "ubuntu-latest",
-      "target": "x86_64-unknown-linux-gnu",
+      "target": "x86_64-unknown-linux-gnu"
     },
     {
       "build": "armv7",
