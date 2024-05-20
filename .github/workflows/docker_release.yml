@@ -6,7 +6,7 @@ on:
       - "*"
 
 jobs:
-  push_images:
+  build:
     runs-on: ubuntu-latest
     permissions:
       packages: write
